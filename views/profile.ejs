@@ -6,10 +6,20 @@
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body text-center p-5">
                         <div class="mb-4">
-                            <div class="avatar bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                style="width: 100px; height: 100px; font-size: 2.5rem;">
-                                <%= user.username.charAt(0).toUpperCase() %>
-                            </div>
+                            <div class="avatar-container">
+                                <% if (user.avatar_url) { %>
+                                    <img src="<%= user.avatar_url %>" alt="<%= user.username %>" class="rounded-circle avatar-img">
+                                    <% } else { %>
+                                    <div class="avatar bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                        style="width: 100px; height: 100px; font-size: 2.5rem;">
+                                        <%= user.username.charAt(0).toUpperCase() %>
+                                    </div>
+                                <% } %>
+                                    <button type="button" class="btn btn-sm btn-primary avatar-edit-btn" data-bs-toggle="modal"
+                                        data-bs-target="#avatarModal">
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                    </div>
                         </div>
                         <h4>
                             <%= user.username %>
@@ -27,6 +37,10 @@
                             <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> Joined: <%= new
                                     Date(user.created_at).toLocaleDateString() %>
                             </p>
+                            <% if (user.bio) { %>
+                                <p class="mb-1"><i class="fas fa-info-circle me-2"></i> Bio: <%= user.bio %>
+                                </p>
+                                <% } %>
                         </div>
                     </div>
                 </div>
@@ -38,6 +52,20 @@
                         <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Edit Profile</h5>
                     </div>
                     <div class="card-body p-4">
+                        <% if (locals.success) { %>
+                            <div class="alert alert-success alert-dismissible fade show">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <%= success %>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            <% } %>
+                                <% if (locals.error) { %>
+                                    <div class="alert alert-danger alert-dismissible fade show">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <%= error %>
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                    <% } %>
                         <form action="/auth/profile" method="POST">
                             <div class="mb-3">
                                 <label for="username" class="form-label">Username</label>
@@ -50,6 +78,12 @@
                                 <label for="email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="email" name="email"
                                     value="<%= user.email %>" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="bio" class="form-label">Bio</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="3"><%= user.bio || '' %></textarea>
+                                <div class="form-text">Tell us a little about yourself</div>
                             </div>
 
                             <hr class="my-4">
@@ -82,5 +116,106 @@
             </div>
         </div>
     </div>
+    
+    <!-- Avatar Upload Modal -->
+    <div class="modal fade" id="avatarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Profile Picture</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="avatarForm" action="/auth/profile/avatar" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="avatar" class="form-label">Select Image</label>
+                            <input type="file" class="form-control" id="avatar" name="avatar" accept=".jpg,.jpeg,.png,.webp"
+                                required>
+                            <div class="form-text">Recommended size: 300x300 pixels</div>
+                        </div>
+    
+                        <div id="avatar_preview_container" class="text-center mb-3" style="display: none;">
+                            <h6 class="mb-2">Preview</h6>
+                            <div class="avatar-preview mx-auto">
+                                <img id="avatar_preview" src="#" alt="Avatar Preview">
+                            </div>
+                        </div>
+    
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Profile Picture
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <%- include('partials/footer') %>
+    <!-- Avatar Styles -->
+    <style>
+        .avatar-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+    
+        .avatar-img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+    
+        .avatar-edit-btn {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+    
+        .avatar-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--bs-primary);
+        }
+    
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+    
+    <script>
+        // Avatar Preview
+        document.addEventListener('DOMContentLoaded', function () {
+            const avatarInput = document.getElementById('avatar');
+            const avatarPreview = document.getElementById('avatar_preview');
+            const avatarPreviewContainer = document.getElementById('avatar_preview_container');
+
+            if (avatarInput && avatarPreview && avatarPreviewContainer) {
+                avatarInput.addEventListener('change', function () {
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+
+                        reader.onload = function (e) {
+                            avatarPreview.src = e.target.result;
+                            avatarPreviewContainer.style.display = 'block';
+                        };
+
+                        reader.readAsDataURL(this.files[0]);
+                    }
+                });
+            }
+        });
+    </script>

@@ -2,41 +2,148 @@
 
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card border-0 shadow-sm">
+            <div class="col-md-10">
+                <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white">
-                        <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Upload 3D Model</h4>
+                        <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Your 3D Model</h4>
                     </div>
                     <div class="card-body p-4">
-                        <form action="/models" method="POST" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Model Name</label>
-                                <input type="text" class="form-control" id="name" name="name" required>
-                            </div>
+                        <p class="text-muted mb-4">Share your 3D creations with the community. We support GLB, GLTF, and OBJ formats.</p>
+                        
+                        <form action="/models" method="POST" enctype="multipart/form-data" id="uploadForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Model Title *</label>
+                                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter a title for your model" required>
+                                        </div>
 
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                            </div>
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Description *</label>
+                                        <textarea class="form-control" id="description" name="description" rows="3"
+                                            placeholder="Describe your model (materials, purpose, etc.)"></textarea>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="category" class="form-label">Category *</label>
+                                            <select class="form-select" id="category" name="category">
+                                                <option value="" selected>Select a category</option>
+                                                <option value="architecture">Architecture</option>
+                                                <option value="art">Art</option>
+                                                <option value="characters">Characters</option>
+                                                <option value="furniture">Furniture</option>
+                                                <option value="nature">Nature</option>
+                                                <option value="technology">Technology</option>
+                                                <option value="vehicles">Vehicles</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="tags" class="form-label">Tags (comma separated)</label>
+                                            <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g. modern, sci-fi, game-ready">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">License *</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" id="creative_commons" name="license" value="Creative Commons"
+                                                    checked>
+                                                <label class="form-check-label" for="creative_commons">
+                                                    Creative Commons
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" id="commercial_use" name="license" value="Commercial Use">
+                                                <label class="form-check-label" for="commercial_use">
+                                                    Commercial Use
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" id="personal_use" name="license" value="Personal Use Only">
+                                                <label class="form-check-label" for="personal_use">
+                                                    Personal Use Only
+                                                </label>
+                                            </div>
+                                        </div>
 
-                            <div class="mb-4">
-                                <label for="model_file" class="form-label">3D Model File</label>
-                                <input type="file" class="form-control" id="model_file" name="model_file"
-                                    accept=".glb,.gltf,.usdz" required>
-                                <div class="form-text">Supported formats: GLB, GLTF, USDZ. Maximum file size: 50MB.
-                                </div>
-                            </div>
+                                    <div class="mb-3">
+                                        <label for="author_name" class="form-label">Author Name *</label>
+                                        <input type="text" class="form-control" id="author_name" name="author_name" placeholder="Your name">
+                                    </div>
+<div class="mb-3">
+    <label for="email" class="form-label">Email *</label>
+    <input type="email" class="form-control" id="email" name="email" placeholder="Your email address">
+                                    </div>
 
-                            <div class="mb-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="is_public" name="is_public" value="on">
-                                    <label class="form-check-label" for="is_public">
-                                        Make this model public (visible to everyone)
-                                    </label>
-                                </div>
-                            </div>
+                                    <div class="mb-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="is_public" name="is_public" value="on" checked>
+                                            <label class="form-check-label" for="is_public">
+                                                Make this model public (visible to everyone)
+                                            </label>
+                                            </div>
+                                            </div>
 
-                            <div class="d-grid">
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                            <label class="form-check-label" for="terms">
+                                                I agree to the <a href="/terms-and-conditions">Terms and Conditions</a>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="model_file" class="form-label">3D Model File *</label>
+                                            <input type="file" class="form-control" id="model_file" name="model_file" accept=".glb,.gltf,.obj" required>
+                                            <div class="form-text">Supported formats: GLB, GLTF, OBJ. Maximum file size: 50MB.</div>
+                                        </div>
+                                    
+                                        <!-- OBJ related files (only shown when OBJ is selected) -->
+                                        <div id="obj_mtl_container" style="display: none;">
+                                            <div class="mb-3">
+                                                <label for="mtl_file" class="form-label">MTL File (for OBJ)</label>
+                                                <input type="file" class="form-control" id="mtl_file" name="mtl_file" accept=".mtl">
+                                                <div class="form-text">Material file for OBJ format</div>
+                                            </div>
+                                        </div>
+                                    
+                                        <!-- Texture files (only shown when needed) -->
+                                        <div id="texture_files_container" style="display: none;">
+                                            <div class="mb-3">
+                                                <label for="texture_files" class="form-label">Texture Files</label>
+                                                <input type="file" class="form-control" id="texture_files" name="texture_files"
+                                                    accept=".jpg,.jpeg,.png,.webp" multiple>
+                                                <div class="form-text">Texture images for your 3D model</div>
+                                            </div>
+                                        </div>
+                                    
+                                        <div class="mb-4">
+                                            <label for="thumbnail" class="form-label">Thumbnail Image (Optional)</label>
+                                            <input type="file" class="form-control" id="thumbnail" name="thumbnail" accept=".jpg,.jpeg,.png,.webp">
+                                            <div class="form-text">Add a thumbnail image for your model</div>
+                                        </div>
+                                    
+                                        <div class="preview-container mb-4">
+                                            <label class="form-label">Preview</label>
+                                            <div class="model-preview" id="modelPreview">
+                                                <div class="upload-placeholder text-center p-5 bg-light rounded">
+                                                    <i class="fas fa-cube fa-3x mb-3 text-muted"></i>
+                                                    <p class="mb-0 text-muted">Model preview will appear here</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    
+                                        <div class="progress mb-3" style="display: none;" id="uploadProgress">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                    
+                                    <div class="d-grid mt-4">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-upload me-2"></i>Upload Model
                                 </button>
@@ -45,18 +152,16 @@
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm mt-4">
+                <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white">
                         <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Tips for Uploading Models</h5>
                     </div>
                     <div class="card-body">
                         <ul class="mb-0">
-                            <li class="mb-2">Use <strong>GLB format</strong> for best performance and compatibility.
-                            </li>
-                            <li class="mb-2">Optimize your models before uploading (reduce polygon count, compress
-                                textures).</li>
-                            <li class="mb-2">Consider using <a href="https://github.com/google/draco"
-                                    target="_blank">Draco compression</a> for GLB/GLTF files to reduce file size.</li>
+                            <li class="mb-2">Use <strong>GLB format</strong> for best performance and compatibility.</li>
+                            <li class="mb-2">Optimize your models before uploading (reduce polygon count, compress textures).</li>
+                            <li class="mb-2">Consider using <a href="https://github.com/google/draco" target="_blank">Draco compression</a> for
+                                GLB/GLTF files to reduce file size.</li>
                             <li class="mb-2">Include textures in your GLB file for best results.</li>
                             <li>For AR support on iOS, provide USDZ format as well.</li>
                         </ul>
@@ -65,5 +170,91 @@
             </div>
         </div>
     </div>
+
+    <!-- Conversion Modal -->
+    <div class="modal fade" id="conversionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Converting Your Model</h5>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>We're converting your model to an optimized format. This may take a few moments...</p>
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                            style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Handle different file formats
+        document.addEventListener('DOMContentLoaded', function () {
+            const modelFileInput = document.getElementById('model_file');
+            const objMtlContainer = document.getElementById('obj_mtl_container');
+            const textureFilesContainer = document.getElementById('texture_files_container');
+            const uploadForm = document.getElementById('uploadForm');
+            const uploadProgress = document.getElementById('uploadProgress');
+
+            if (modelFileInput) {
+                modelFileInput.addEventListener('change', function () {
+                    const fileName = this.value.toLowerCase();
+
+                    // Hide additional file inputs by default
+                    objMtlContainer.style.display = 'none';
+                    textureFilesContainer.style.display = 'none';
+
+                    // Show relevant file inputs based on selected file type
+                    if (fileName.endsWith('.obj')) {
+                        objMtlContainer.style.display = 'block';
+                        textureFilesContainer.style.display = 'block';
+                    } else if (fileName.endsWith('.fbx') || fileName.endsWith('.gltf')) {
+                        textureFilesContainer.style.display = 'block';
+                    }
+
+                    // Preview model if possible
+                    if (this.files && this.files[0]) {
+                        // In a real implementation, you would use model-viewer or another library
+                        // to preview the 3D model here
+                        const modelPreview = document.getElementById('modelPreview');
+                        modelPreview.innerHTML = `
+                                <div class="text-center p-5 bg-light rounded">
+                                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                                    <p class="mb-0">File selected: ${this.files[0].name}</p>
+                                    <p class="text-muted">${Math.round(this.files[0].size / 1024)} KB</p>
+                                </div>
+                            `;
+                    }
+                });
+            }
+
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', function (e) {
+                    // Show upload progress
+                    uploadProgress.style.display = 'block';
+
+                    // In a real implementation, you would handle file upload with progress here
+                    // This is just for demonstration
+                    const progressBar = uploadProgress.querySelector('.progress-bar');
+                    let progress = 0;
+
+                    const interval = setInterval(function () {
+                        progress += 5;
+                        progressBar.style.width = progress + '%';
+                        progressBar.setAttribute('aria-valuenow', progress);
+
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                        }
+                    }, 200);
+                });
+            }
+        });
+    </script>
 
     <%- include('../partials/footer') %>

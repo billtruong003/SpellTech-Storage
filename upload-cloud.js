@@ -78,6 +78,36 @@ try {
     });
 }
 
+// Configure storage for avatar images
+let avatarStorage;
+try {
+    avatarStorage = new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+            folder: 'avatars',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+            transformation: [
+                { width: 300, height: 300, crop: 'fill', gravity: 'face' },
+                { quality: 'auto' }
+            ]
+        }
+    });
+    console.log('Avatar storage configured successfully');
+} catch (error) {
+    console.error('Error configuring avatar storage:', error);
+    // Fallback to local storage if Cloudinary fails
+    avatarStorage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            cb(null, 'uploads/avatars');
+        },
+        filename: function (req, file, cb) {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            const ext = path.extname(file.originalname);
+            cb(null, 'avatar-' + uniqueSuffix + ext);
+        }
+    });
+}
+
 // Configure multer for 3D model uploads
 const uploadModel = multer({
     storage: modelStorage,
@@ -114,8 +144,27 @@ const uploadImage = multer({
     }
 });
 
+// Configure multer for avatar uploads
+const uploadAvatar = multer({
+    storage: avatarStorage,
+    fileFilter: function (req, file, cb) {
+        // Accept only image files
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (allowedExtensions.includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only .jpg, .jpeg, .png, and .webp files are allowed'));
+        }
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB max file size
+    }
+}).single('avatar');
+
 module.exports = {
     uploadModel,
     uploadImage,
+    uploadAvatar,
     cloudinary
 }; 
