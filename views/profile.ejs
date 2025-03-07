@@ -1,0 +1,86 @@
+<%- include('partials/header') %>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body text-center p-5">
+                        <div class="mb-4">
+                            <div class="avatar bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                style="width: 100px; height: 100px; font-size: 2.5rem;">
+                                <%= user.username.charAt(0).toUpperCase() %>
+                            </div>
+                        </div>
+                        <h4>
+                            <%= user.username %>
+                        </h4>
+                        <p class="text-muted">
+                            <%= user.email %>
+                        </p>
+                        <p class="mb-0">
+                            <span class="badge bg-<%= user.role === 'admin' ? 'danger' : 'primary' %>">
+                                <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+                            </span>
+                        </p>
+                        <hr>
+                        <div class="text-start">
+                            <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> Joined: <%= new
+                                    Date(user.created_at).toLocaleDateString() %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Edit Profile</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="/auth/profile" method="POST">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" value="<%= user.username %>"
+                                    disabled>
+                                <div class="form-text">Username cannot be changed</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                    value="<%= user.email %>" required>
+                            </div>
+
+                            <hr class="my-4">
+                            <h5 class="mb-3">Change Password</h5>
+
+                            <div class="mb-3">
+                                <label for="currentPassword" class="form-label">Current Password</label>
+                                <input type="password" class="form-control" id="currentPassword" name="currentPassword">
+                                <div class="form-text">Leave blank if you don't want to change your password</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="newPassword" name="newPassword">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword">
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('partials/footer') %>

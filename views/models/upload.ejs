@@ -1,0 +1,70 @@
+<%- include('../partials/header') %>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Upload 3D Model</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="/models/upload" method="POST" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Model Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="model" class="form-label">3D Model File</label>
+                                <input type="file" class="form-control" id="model" name="model"
+                                    accept=".glb,.gltf,.usdz" required>
+                                <div class="form-text">Supported formats: GLB, GLTF, USDZ. Maximum file size: 50MB.
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isPublic" name="isPublic"
+                                        value="1">
+                                    <label class="form-check-label" for="isPublic">
+                                        Make this model public (visible to everyone)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-upload me-2"></i>Upload Model
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Tips for Uploading Models</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            <li class="mb-2">Use <strong>GLB format</strong> for best performance and compatibility.
+                            </li>
+                            <li class="mb-2">Optimize your models before uploading (reduce polygon count, compress
+                                textures).</li>
+                            <li class="mb-2">Consider using <a href="https://github.com/google/draco"
+                                    target="_blank">Draco compression</a> for GLB/GLTF files to reduce file size.</li>
+                            <li class="mb-2">Include textures in your GLB file for best results.</li>
+                            <li>For AR support on iOS, provide USDZ format as well.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/footer') %>

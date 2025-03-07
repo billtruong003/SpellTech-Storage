@@ -1,0 +1,1384 @@
+<%- include('../partials/header') %>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-model-viewer" style="height: 300px; background-color: #f8f9fa;">
+                        <model-viewer src="/<%= model.file_path %>" camera-controls auto-rotate shadow-intensity="1"
+                            exposure="0.5" style="width: 100%; height: 100%;" loading="lazy" ar-status="not-presenting">
+                        </model-viewer>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <%= model.name %>
+                        </h5>
+                        <p class="card-text text-muted small">
+                            <i class="fas fa-calendar me-1"></i> Uploaded: <%= new
+                                Date(model.created_at).toLocaleDateString() %>
+                        </p>
+                        <p class="card-text text-muted small">
+                            <i class="fas fa-file me-1"></i>
+                            <%= model.file_type.toUpperCase() %> |
+                                <i class="fas fa-weight-hanging me-1"></i>
+                                <%= Math.round(model.file_size / 1024) %> KB
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="/models/<%= model.id %>" class="btn btn-outline-primary">
+                        <i class="fas fa-eye me-2"></i>View Model
+                    </a>
+                    <button type="button" class="btn btn-outline-danger"
+                        onclick="confirmDelete('<%= model.id %>', '<%= model.name %>')">
+                        <i class="fas fa-trash me-2"></i>Delete Model
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Model Details</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="editModelForm" action="/models/<%= model.id %>/update" method="POST">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Model Name</label>
+                                <input type="text" class="form-control" id="name" name="name" value="<%= model.name %>"
+                                    required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description"
+                                    rows="3"><%= model.description || '' %></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isPublic" name="isPublic"
+                                        value="1" <%=model.is_public ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="isPublic">
+                                        Make this model public (visible to everyone)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Model Viewer Settings</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="saveSettingsBtn">
+                            <i class="fas fa-save me-1"></i>Save Settings
+                        </button>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="nav nav-tabs mb-3" id="settingsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="camera-tab" data-bs-toggle="tab"
+                                    data-bs-target="#camera" type="button" role="tab">
+                                    <i class="fas fa-camera me-1"></i>Camera
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="lighting-tab" data-bs-toggle="tab"
+                                    data-bs-target="#lighting" type="button" role="tab">
+                                    <i class="fas fa-lightbulb me-1"></i>Lighting
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="animation-tab" data-bs-toggle="tab"
+                                    data-bs-target="#animation" type="button" role="tab">
+                                    <i class="fas fa-film me-1"></i>Animation
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="post-processing-tab" data-bs-toggle="tab"
+                                    data-bs-target="#post-processing" type="button" role="tab">
+                                    <i class="fas fa-cogs me-1"></i>Post Processing
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="textures-tab" data-bs-toggle="tab"
+                                    data-bs-target="#textures" type="button" role="tab">
+                                    <i class="fas fa-paint-brush me-1"></i>Textures
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="settingsTabContent">
+                            <!-- Camera Settings -->
+                            <div class="tab-pane fade show active" id="camera" role="tabpanel"
+                                aria-labelledby="camera-tab">
+                                <!-- Camera Orbit -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Camera Orbit</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="orbit_theta" class="form-label">Horizontal Rotation (θ): <span
+                                                    id="orbit_theta_value">0</span>°</label>
+                                            <input type="range" class="form-range" id="orbit_theta" min="0" max="360"
+                                                step="1" value="0">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="orbit_phi" class="form-label">Vertical Rotation (φ): <span
+                                                    id="orbit_phi_value">75</span>°</label>
+                                            <input type="range" class="form-range" id="orbit_phi" min="0" max="180"
+                                                step="1" value="75">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="orbit_radius" class="form-label">Distance (radius): <span
+                                                    id="orbit_radius_value">2</span>m</label>
+                                            <input type="range" class="form-range" id="orbit_radius" min="0.5" max="10"
+                                                step="0.1" value="2">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="camera_orbit" class="form-label">Camera Orbit (Advanced)</label>
+                                            <input type="text" class="form-control" id="camera_orbit"
+                                                value="<%= model.camera_orbit || '0deg 75deg 2m' %>">
+                                            <div class="form-text">Format: "theta phi radius" (e.g., "0deg 75deg 2m")
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Camera Target -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Camera Target</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="target_x" class="form-label">X: <span
+                                                    id="target_x_value">0</span>m</label>
+                                            <input type="range" class="form-range" id="target_x" min="-5" max="5"
+                                                step="0.1" value="0">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="target_y" class="form-label">Y: <span
+                                                    id="target_y_value">0</span>m</label>
+                                            <input type="range" class="form-range" id="target_y" min="-5" max="5"
+                                                step="0.1" value="0">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="target_z" class="form-label">Z: <span
+                                                    id="target_z_value">0</span>m</label>
+                                            <input type="range" class="form-range" id="target_z" min="-5" max="5"
+                                                step="0.1" value="0">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="camera_target" class="form-label">Camera Target
+                                                (Advanced)</label>
+                                            <input type="text" class="form-control" id="camera_target"
+                                                value="<%= model.camera_target || '0m 0m 0m' %>">
+                                            <div class="form-text">Format: "x y z" (e.g., "0m 0m 0m")</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Field of View -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Field of View</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="field_of_view_slider" class="form-label">FOV: <span
+                                                    id="field_of_view_value">45</span>°</label>
+                                            <input type="range" class="form-range" id="field_of_view_slider" min="10"
+                                                max="90" step="1" value="45">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="field_of_view" class="form-label">Field of View
+                                                (Advanced)</label>
+                                            <input type="text" class="form-control" id="field_of_view"
+                                                value="<%= model.field_of_view || '45deg' %>">
+                                            <div class="form-text">Format: "angle" (e.g., "45deg")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lighting Settings -->
+                            <div class="tab-pane fade" id="lighting" role="tabpanel">
+                                <!-- Environment Image -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Environment Image</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Select Environment</label>
+                                            <select class="form-select" id="environment_preset">
+                                                <option value="">Custom (Upload your own)</option>
+                                                <option value="neutral">Neutral</option>
+                                                <option value="legacy">Legacy</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr">
+                                                    Sunrise</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/aircraft_workshop_01_1k.hdr">
+                                                    Workshop</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/venice_sunset_1k.hdr">
+                                                    Venice Sunset</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/royal_esplanade_1k.hdr">
+                                                    Royal Esplanade</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3" id="custom_environment_container">
+                                            <label for="environment_image_file" class="form-label">Upload Environment
+                                                Image (HDR/JPG)</label>
+                                            <input type="file" class="form-control" id="environment_image_file"
+                                                accept=".hdr,.jpg,.jpeg,.png">
+                                            <div class="form-text">For best results, use HDR images in equirectangular
+                                                format</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="environment_image" class="form-label">Environment Image
+                                                URL</label>
+                                            <input type="text" class="form-control" id="environment_image"
+                                                value="<%= model.environment_image || '' %>">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Skybox Image -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Skybox Image</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Select Skybox</label>
+                                            <select class="form-select" id="skybox_preset">
+                                                <option value="">Custom (Upload your own)</option>
+                                                <option value="none">None (Transparent Background)</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr">
+                                                    Sunrise</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/aircraft_workshop_01_1k.hdr">
+                                                    Workshop</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/venice_sunset_1k.hdr">
+                                                    Venice Sunset</option>
+                                                <option
+                                                    value="https://modelviewer.dev/shared-assets/environments/royal_esplanade_1k.hdr">
+                                                    Royal Esplanade</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3" id="custom_skybox_container">
+                                            <label for="skybox_image_file" class="form-label">Upload Skybox Image
+                                                (HDR/JPG)</label>
+                                            <input type="file" class="form-control" id="skybox_image_file"
+                                                accept=".hdr,.jpg,.jpeg,.png">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="skybox_image" class="form-label">Skybox Image URL</label>
+                                            <input type="text" class="form-control" id="skybox_image"
+                                                value="<%= model.skybox_image || '' %>">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="skybox_height" class="form-label">Skybox Height: <span
+                                                    id="skybox_height_value">0</span></label>
+                                            <input type="range" class="form-range" id="skybox_height" min="0" max="10"
+                                                step="0.1" value="<%= model.skybox_height || '0' %>">
+                                            <div class="form-text">For ground-projected skyboxes</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Background Color (when no skybox) -->
+                                <div class="card mb-3" id="background_color_container">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Background Color</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="background_color" class="form-label">Color</label>
+                                            <input type="color" class="form-control form-control-color"
+                                                id="background_color" value="#ffffff">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="background_alpha" class="form-label">Opacity: <span
+                                                    id="background_alpha_value">1.0</span></label>
+                                            <input type="range" class="form-range" id="background_alpha" min="0" max="1"
+                                                step="0.01" value="1.0">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Lighting Controls -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Lighting Controls</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="exposure" class="form-label">Exposure: <span
+                                                    id="exposure_value">
+                                                    <%= model.exposure || '1' %>
+                                                </span></label>
+                                            <input type="range" class="form-range" id="exposure" min="0" max="2"
+                                                step="0.05" value="<%= model.exposure || '1' %>">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="shadow_intensity" class="form-label">Shadow Intensity: <span
+                                                    id="shadow_intensity_value">
+                                                    <%= model.shadow_intensity || '0.7' %>
+                                                </span></label>
+                                            <input type="range" class="form-range" id="shadow_intensity" min="0" max="1"
+                                                step="0.05" value="<%= model.shadow_intensity || '0.7' %>">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="shadow_softness" class="form-label">Shadow Softness: <span
+                                                    id="shadow_softness_value">
+                                                    <%= model.shadow_softness || '1' %>
+                                                </span></label>
+                                            <input type="range" class="form-range" id="shadow_softness" min="0" max="1"
+                                                step="0.05" value="<%= model.shadow_softness || '1' %>">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="tone_mapping" class="form-label">Tone Mapping</label>
+                                            <select class="form-select" id="tone_mapping">
+                                                <option value="neutral" <%=model.tone_mapping==='neutral' ? 'selected'
+                                                    : '' %>>Neutral</option>
+                                                <option value="aces" <%=model.tone_mapping==='aces' ? 'selected' : '' %>
+                                                    >ACES</option>
+                                                <option value="agx" <%=model.tone_mapping==='agx' ? 'selected' : '' %>
+                                                    >AgX</option>
+                                                <option value="cineon" <%=model.tone_mapping==='cineon' ? 'selected'
+                                                    : '' %>>Cineon</option>
+                                                <option value="reinhard" <%=model.tone_mapping==='reinhard' ? 'selected'
+                                                    : '' %>>Reinhard</option>
+                                                <option value="linear" <%=model.tone_mapping==='linear' ? 'selected'
+                                                    : '' %>>Linear</option>
+                                                <option value="none" <%=model.tone_mapping==='none' ? 'selected' : '' %>
+                                                    >None</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Animation Settings -->
+                            <div class="tab-pane fade" id="animation" role="tabpanel" aria-labelledby="animation-tab">
+                                <div class="mb-3">
+                                    <label for="animation_name" class="form-label">Animation Name</label>
+                                    <input type="text" class="form-control" id="animation_name"
+                                        value="<%= model.animation_name || '' %>">
+                                    <div class="form-text">Name of the animation to play (leave empty for default)</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="autoplay" <%=model.autoplay
+                                            ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="autoplay">
+                                            Autoplay animation
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Post Processing -->
+                            <div class="tab-pane fade" id="post-processing" role="tabpanel">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enable_post_processing">
+                                        <label class="form-check-label" for="enable_post_processing">Enable Post
+                                            Processing</label>
+                                    </div>
+                                </div>
+
+                                <div id="post_processing_options" class="mt-3">
+                                    <!-- Bloom Effect -->
+                                    <div class="card mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Bloom Effect</h6>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="enable_bloom">
+                                            </div>
+                                        </div>
+                                        <div class="card-body" id="bloom_options">
+                                            <div class="mb-2">
+                                                <label for="bloom_strength" class="form-label">Strength: <span
+                                                        id="bloom_strength_value">1.0</span></label>
+                                                <input type="range" class="form-range" id="bloom_strength" min="0"
+                                                    max="3" step="0.1" value="1.0">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="bloom_radius" class="form-label">Radius: <span
+                                                        id="bloom_radius_value">0.4</span></label>
+                                                <input type="range" class="form-range" id="bloom_radius" min="0" max="1"
+                                                    step="0.05" value="0.4">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="bloom_threshold" class="form-label">Threshold: <span
+                                                        id="bloom_threshold_value">0.8</span></label>
+                                                <input type="range" class="form-range" id="bloom_threshold" min="0"
+                                                    max="1" step="0.05" value="0.8">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- SSAO Effect -->
+                                    <div class="card mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">SSAO Effect</h6>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="enable_ssao">
+                                            </div>
+                                        </div>
+                                        <div class="card-body" id="ssao_options">
+                                            <div class="mb-2">
+                                                <label for="ssao_radius" class="form-label">Radius: <span
+                                                        id="ssao_radius_value">0.2</span></label>
+                                                <input type="range" class="form-range" id="ssao_radius" min="0" max="1"
+                                                    step="0.05" value="0.2">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="ssao_intensity" class="form-label">Intensity: <span
+                                                        id="ssao_intensity_value">1.0</span></label>
+                                                <input type="range" class="form-range" id="ssao_intensity" min="0"
+                                                    max="5" step="0.1" value="1.0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Outline Effect -->
+                                    <div class="card mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Outline Effect</h6>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="enable_outline">
+                                            </div>
+                                        </div>
+                                        <div class="card-body" id="outline_options">
+                                            <div class="mb-2">
+                                                <label for="outline_color" class="form-label">Color</label>
+                                                <input type="color" class="form-control form-control-color"
+                                                    id="outline_color" value="#000000">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="outline_thickness" class="form-label">Thickness: <span
+                                                        id="outline_thickness_value">1.0</span></label>
+                                                <input type="range" class="form-range" id="outline_thickness" min="0"
+                                                    max="5" step="0.1" value="1.0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Color Grade Effect -->
+                                    <div class="card mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Color Grade</h6>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="enable_color_grade">
+                                            </div>
+                                        </div>
+                                        <div class="card-body" id="color_grade_options">
+                                            <div class="mb-2">
+                                                <label for="contrast" class="form-label">Contrast: <span
+                                                        id="contrast_value">1.0</span></label>
+                                                <input type="range" class="form-range" id="contrast" min="0" max="2"
+                                                    step="0.05" value="1.0">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="saturation" class="form-label">Saturation: <span
+                                                        id="saturation_value">1.0</span></label>
+                                                <input type="range" class="form-range" id="saturation" min="0" max="2"
+                                                    step="0.05" value="1.0">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label for="brightness" class="form-label">Brightness: <span
+                                                        id="brightness_value">1.0</span></label>
+                                                <input type="range" class="form-range" id="brightness" min="0" max="2"
+                                                    step="0.05" value="1.0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Textures -->
+                            <div class="tab-pane fade" id="textures" role="tabpanel">
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Texture management allows you to modify or replace textures in your model.
+                                </div>
+
+                                <!-- Material List -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Materials</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="material_select" class="form-label">Select Material</label>
+                                            <select class="form-select" id="material_select">
+                                                <option value="">Loading materials...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Material Properties -->
+                                <div id="material_properties" class="card mb-3" style="display: none;">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Material Properties</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Base Color -->
+                                        <div class="mb-3">
+                                            <label for="base_color" class="form-label">Base Color</label>
+                                            <input type="color" class="form-control form-control-color" id="base_color"
+                                                value="#ffffff">
+                                        </div>
+
+                                        <!-- Metalness -->
+                                        <div class="mb-3">
+                                            <label for="metalness" class="form-label">Metalness: <span
+                                                    id="metalness_value">0</span></label>
+                                            <input type="range" class="form-range" id="metalness" min="0" max="1"
+                                                step="0.01" value="0">
+                                        </div>
+
+                                        <!-- Roughness -->
+                                        <div class="mb-3">
+                                            <label for="roughness" class="form-label">Roughness: <span
+                                                    id="roughness_value">1</span></label>
+                                            <input type="range" class="form-range" id="roughness" min="0" max="1"
+                                                step="0.01" value="1">
+                                        </div>
+
+                                        <!-- Emissive -->
+                                        <div class="mb-3">
+                                            <label for="emissive_color" class="form-label">Emissive Color</label>
+                                            <input type="color" class="form-control form-control-color"
+                                                id="emissive_color" value="#000000">
+                                        </div>
+
+                                        <!-- Emissive Intensity -->
+                                        <div class="mb-3">
+                                            <label for="emissive_intensity" class="form-label">Emissive Intensity: <span
+                                                    id="emissive_intensity_value">0</span></label>
+                                            <input type="range" class="form-range" id="emissive_intensity" min="0"
+                                                max="10" step="0.1" value="0">
+                                        </div>
+
+                                        <!-- Alpha Mode -->
+                                        <div class="mb-3">
+                                            <label for="alpha_mode" class="form-label">Alpha Mode</label>
+                                            <select class="form-select" id="alpha_mode">
+                                                <option value="OPAQUE">Opaque</option>
+                                                <option value="MASK">Mask</option>
+                                                <option value="BLEND">Blend</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Alpha Cutoff (for MASK mode) -->
+                                        <div class="mb-3" id="alpha_cutoff_container" style="display: none;">
+                                            <label for="alpha_cutoff" class="form-label">Alpha Cutoff: <span
+                                                    id="alpha_cutoff_value">0.5</span></label>
+                                            <input type="range" class="form-range" id="alpha_cutoff" min="0" max="1"
+                                                step="0.01" value="0.5">
+                                        </div>
+
+                                        <!-- Double Sided -->
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="double_sided">
+                                                <label class="form-check-label" for="double_sided">Double Sided</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Texture Maps -->
+                                <div id="texture_maps" class="card mb-3" style="display: none;">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Texture Maps</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Base Color Texture -->
+                                        <div class="mb-4">
+                                            <label class="form-label">Base Color Texture</label>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="texture-preview me-3" id="base_color_texture_preview">
+                                                    <div class="no-texture">No Texture</div>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <input type="file" class="form-control" id="base_color_texture_file"
+                                                        accept=".jpg,.png">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-viewer-controls mb-3">
+                    <div class="btn-group" role="group">
+                        <!-- Các nút view mode đã có -->
+
+                        <button type="button" class="btn btn-outline-secondary" id="save-view-btn">
+                            <i class="fas fa-camera me-1"></i>Save View as Poster
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <span id="modelName" class="fw-bold"></span>?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save View Modal -->
+    <div class="modal fade" id="saveViewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Save Current View as Poster</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img id="poster_preview" src="#" alt="Poster Preview" class="img-fluid border rounded">
+                    </div>
+
+                    <form id="posterForm" action="/models/<%= model.id %>/poster" method="POST">
+                        <input type="hidden" id="poster_data" name="poster_data">
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save as Model Poster
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avatar Upload Modal -->
+    <div class="modal fade" id="avatarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Profile Picture</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="avatarForm" action="/profile/avatar" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="avatar_file" class="form-label">Select Image</label>
+                            <input type="file" class="form-control" id="avatar_file" name="avatar_file"
+                                accept=".jpg,.jpeg,.png,.webp" required>
+                            <div class="form-text">Recommended size: 300x300 pixels</div>
+                        </div>
+
+                        <div id="avatar_preview_container" class="text-center mb-3" style="display: none;">
+                            <h6 class="mb-2">Preview</h6>
+                            <div class="avatar-preview mx-auto">
+                                <img id="avatar_preview" src="#" alt="Avatar Preview">
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Profile Picture
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="profileForm" action="/profile/update" method="POST">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                value="<%= user.username %>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="<%= user.email %>"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">Bio</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3"><%= user.bio || '' %></textarea>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="passwordForm" action="/profile/password" method="POST">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                                required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update range input values
+        document.getElementById('exposure').addEventListener('input', function () {
+            document.getElementById('exposure_value').textContent = this.value;
+        });
+
+        document.getElementById('shadow_intensity').addEventListener('input', function () {
+            document.getElementById('shadow_intensity_value').textContent = this.value;
+        });
+
+        document.getElementById('shadow_softness').addEventListener('input', function () {
+            document.getElementById('shadow_softness_value').textContent = this.value;
+        });
+
+        // Save settings
+        document.getElementById('saveSettingsBtn').addEventListener('click', function () {
+            const settings = {
+                camera_orbit: document.getElementById('camera_orbit').value,
+                camera_target: document.getElementById('camera_target').value,
+                field_of_view: document.getElementById('field_of_view').value,
+                exposure: document.getElementById('exposure').value,
+                shadow_intensity: document.getElementById('shadow_intensity').value,
+                shadow_softness: document.getElementById('shadow_softness').value,
+                environment_image: document.getElementById('environment_image').value,
+                skybox_image: document.getElementById('skybox_image').value,
+                animation_name: document.getElementById('animation_name').value,
+                autoplay: document.getElementById('autoplay').checked
+            };
+
+            fetch('/models/<%= model.id %>/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Settings saved successfully');
+                    } else {
+                        alert('Error saving settings: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error saving settings');
+                });
+        });
+
+        // Delete model
+        function confirmDelete(modelId, modelName) {
+            document.getElementById('modelName').textContent = modelName;
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+
+            document.getElementById('confirmDeleteBtn').onclick = function () {
+                deleteModel(modelId);
+            };
+        }
+
+        function deleteModel(modelId) {
+            fetch(`/models/${modelId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/dashboard';
+                    } else {
+                        alert('Error deleting model: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting model');
+                });
+        }
+
+        // Theme Switcher
+        function initThemeSwitcher() {
+            const themeSystem = document.getElementById('theme-system');
+            const themeLight = document.getElementById('theme-light');
+            const themeDark = document.getElementById('theme-dark');
+
+            if (!themeSystem || !themeLight || !themeDark) return;
+
+            // Check for saved theme preference or use system preference
+            const savedTheme = localStorage.getItem('theme');
+
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else if (savedTheme === 'light') {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            } else {
+                // Use system preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                }
+
+                // Listen for system theme changes
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                    if (!localStorage.getItem('theme')) { // Only if theme is set to "system"
+                        document.documentElement.setAttribute('data-bs-theme', e.matches ? 'dark' : 'light');
+                    }
+                });
+            }
+
+            // Theme switcher event listeners
+            themeSystem.addEventListener('click', () => {
+                localStorage.removeItem('theme');
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                }
+            });
+
+            themeLight.addEventListener('click', () => {
+                localStorage.setItem('theme', 'light');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            });
+
+            themeDark.addEventListener('click', () => {
+                localStorage.setItem('theme', 'dark');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            });
+        }
+
+        // Call the function when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initThemeSwitcher();
+        });
+
+        // Edit Model Form Submission
+        function initEditModelForm() {
+            const editModelForm = document.getElementById('editModelForm');
+
+            if (!editModelForm) return;
+
+            editModelForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // Collect all form data
+                const formData = new FormData(editModelForm);
+
+                // Add camera settings
+                const cameraOrbit = document.getElementById('camera_orbit').value;
+                formData.append('camera_orbit', cameraOrbit);
+
+                const cameraTarget = document.getElementById('camera_target').value;
+                formData.append('camera_target', cameraTarget);
+
+                const fieldOfView = document.getElementById('field_of_view').value;
+                formData.append('field_of_view', fieldOfView);
+
+                // Add lighting settings
+                const exposure = document.getElementById('exposure').value;
+                formData.append('exposure', exposure);
+
+                const shadowIntensity = document.getElementById('shadow_intensity').value;
+                formData.append('shadow_intensity', shadowIntensity);
+
+                const shadowSoftness = document.getElementById('shadow_softness').value;
+                formData.append('shadow_softness', shadowSoftness);
+
+                const toneMapping = document.getElementById('tone_mapping').value;
+                formData.append('tone_mapping', toneMapping);
+
+                // Add environment and skybox settings
+                const environmentImage = document.getElementById('environment_image').value;
+                formData.append('environment_image', environmentImage);
+
+                const skyboxImage = document.getElementById('skybox_image').value;
+                formData.append('skybox_image', skyboxImage);
+
+                const skyboxHeight = document.getElementById('skybox_height').value;
+                formData.append('skybox_height', skyboxHeight);
+
+                // Add background color if no skybox
+                if (skyboxImage === 'none' || skyboxImage === '') {
+                    const backgroundColor = document.getElementById('background_color').value;
+                    formData.append('background_color', backgroundColor);
+
+                    const backgroundAlpha = document.getElementById('background_alpha').value;
+                    formData.append('background_alpha', backgroundAlpha);
+                }
+
+                // Add post-processing settings if enabled
+                if (document.getElementById('enable_post_processing') && document.getElementById('enable_post_processing').checked) {
+                    formData.append('enable_post_processing', 'true');
+
+                    // Bloom
+                    if (document.getElementById('enable_bloom') && document.getElementById('enable_bloom').checked) {
+                        formData.append('enable_bloom', 'true');
+                        formData.append('bloom_strength', document.getElementById('bloom_strength').value);
+                        formData.append('bloom_radius', document.getElementById('bloom_radius').value);
+                        formData.append('bloom_threshold', document.getElementById('bloom_threshold').value);
+                    }
+
+                    // SSAO
+                    if (document.getElementById('enable_ssao') && document.getElementById('enable_ssao').checked) {
+                        formData.append('enable_ssao', 'true');
+                        formData.append('ssao_radius', document.getElementById('ssao_radius').value);
+                        formData.append('ssao_intensity', document.getElementById('ssao_intensity').value);
+                    }
+
+                    // Outline
+                    if (document.getElementById('enable_outline') && document.getElementById('enable_outline').checked) {
+                        formData.append('enable_outline', 'true');
+                        formData.append('outline_color', document.getElementById('outline_color').value);
+                        formData.append('outline_thickness', document.getElementById('outline_thickness').value);
+                    }
+
+                    // Color Grade
+                    if (document.getElementById('enable_color_grade') && document.getElementById('enable_color_grade').checked) {
+                        formData.append('enable_color_grade', 'true');
+                        formData.append('contrast', document.getElementById('contrast').value);
+                        formData.append('saturation', document.getElementById('saturation').value);
+                        formData.append('brightness', document.getElementById('brightness').value);
+                    }
+                }
+
+                // Convert FormData to URL-encoded string
+                const urlEncodedData = new URLSearchParams(formData).toString();
+
+                // Send AJAX request
+                fetch(editModelForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: urlEncodedData
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            const successAlert = document.createElement('div');
+                            successAlert.className = 'alert alert-success alert-dismissible fade show';
+                            successAlert.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i>
+                            Changes saved successfully!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+
+                            // Insert alert before the form
+                            editModelForm.parentNode.insertBefore(successAlert, editModelForm);
+
+                            // Scroll to top
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                            // Reload model viewer with new settings
+                            const modelViewer = document.querySelector('model-viewer');
+                            if (modelViewer) {
+                                // Update model-viewer attributes
+                                if (cameraOrbit) modelViewer.setAttribute('camera-orbit', cameraOrbit);
+                                if (cameraTarget) modelViewer.setAttribute('camera-target', cameraTarget);
+                                if (fieldOfView) modelViewer.setAttribute('field-of-view', fieldOfView);
+                                if (exposure) modelViewer.setAttribute('exposure', exposure);
+                                if (shadowIntensity) modelViewer.setAttribute('shadow-intensity', shadowIntensity);
+                                if (shadowSoftness) modelViewer.setAttribute('shadow-softness', shadowSoftness);
+                                if (environmentImage) modelViewer.setAttribute('environment-image', environmentImage);
+                                if (skyboxImage) modelViewer.setAttribute('skybox-image', skyboxImage);
+                                if (skyboxHeight) modelViewer.setAttribute('skybox-height', skyboxHeight);
+
+                                // Apply post-processing effects if enabled
+                                if (document.getElementById('enable_post_processing') && document.getElementById('enable_post_processing').checked) {
+                                    const effectComposer = document.querySelector('effect-composer');
+                                    if (!effectComposer) {
+                                        // Create effect-composer if it doesn't exist
+                                        const newEffectComposer = document.createElement('effect-composer');
+                                        modelViewer.appendChild(newEffectComposer);
+
+                                        // Add effects based on settings
+                                        if (document.getElementById('enable_bloom') && document.getElementById('enable_bloom').checked) {
+                                            const bloomEffect = document.createElement('bloom-effect');
+                                            bloomEffect.setAttribute('strength', document.getElementById('bloom_strength').value);
+                                            bloomEffect.setAttribute('radius', document.getElementById('bloom_radius').value);
+                                            bloomEffect.setAttribute('threshold', document.getElementById('bloom_threshold').value);
+                                            newEffectComposer.appendChild(bloomEffect);
+                                        }
+
+                                        if (document.getElementById('enable_ssao') && document.getElementById('enable_ssao').checked) {
+                                            const ssaoEffect = document.createElement('ssao-effect');
+                                            ssaoEffect.setAttribute('radius', document.getElementById('ssao_radius').value);
+                                            ssaoEffect.setAttribute('intensity', document.getElementById('ssao_intensity').value);
+                                            newEffectComposer.appendChild(ssaoEffect);
+                                        }
+
+                                        if (document.getElementById('enable_outline') && document.getElementById('enable_outline').checked) {
+                                            const outlineEffect = document.createElement('outline-effect');
+                                            outlineEffect.setAttribute('color', document.getElementById('outline_color').value);
+                                            outlineEffect.setAttribute('thickness', document.getElementById('outline_thickness').value);
+                                            newEffectComposer.appendChild(outlineEffect);
+                                        }
+
+                                        if (document.getElementById('enable_color_grade') && document.getElementById('enable_color_grade').checked) {
+                                            const colorGradeEffect = document.createElement('color-grade-effect');
+                                            colorGradeEffect.setAttribute('contrast', document.getElementById('contrast').value);
+                                            colorGradeEffect.setAttribute('saturation', document.getElementById('saturation').value);
+                                            colorGradeEffect.setAttribute('brightness', document.getElementById('brightness').value);
+                                            newEffectComposer.appendChild(colorGradeEffect);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // Show error message
+                            const errorAlert = document.createElement('div');
+                            errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                            errorAlert.innerHTML = `
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error saving changes: ${data.error || 'Unknown error'}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+
+                            // Insert alert before the form
+                            editModelForm.parentNode.insertBefore(errorAlert, editModelForm);
+
+                            // Scroll to top
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+
+                        // Show error message
+                        const errorAlert = document.createElement('div');
+                        errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                        errorAlert.innerHTML = `
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error saving changes. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+
+                        // Insert alert before the form
+                        editModelForm.parentNode.insertBefore(errorAlert, editModelForm);
+
+                        // Scroll to top
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+            });
+        }
+
+        // Call the function when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initEditModelForm();
+        });
+
+        // Save View as Poster
+        function initSaveView() {
+            const saveViewBtn = document.getElementById('save-view-btn');
+            const modelViewer = document.querySelector('model-viewer');
+            const posterPreview = document.getElementById('poster_preview');
+            const posterDataInput = document.getElementById('poster_data');
+            const saveViewModal = new bootstrap.Modal(document.getElementById('saveViewModal'));
+
+            if (!saveViewBtn || !modelViewer || !posterPreview || !posterDataInput) return;
+
+            saveViewBtn.addEventListener('click', async function () {
+                try {
+                    // Capture current view
+                    const blob = await modelViewer.toBlob({
+                        idealAspect: true,
+                        quality: 0.8,
+                        mimeType: 'image/jpeg'
+                    });
+
+                    // Convert blob to data URL
+                    const reader = new FileReader();
+                    reader.onloadend = function () {
+                        const dataUrl = reader.result;
+                        posterPreview.src = dataUrl;
+                        posterDataInput.value = dataUrl;
+                        saveViewModal.show();
+                    };
+                    reader.readAsDataURL(blob);
+                } catch (error) {
+                    console.error('Error capturing view:', error);
+                    alert('Failed to capture view. Please try again.');
+                }
+            });
+        }
+
+        // Call the function when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initSaveView();
+        });
+
+        // Avatar Preview
+        function initAvatarPreview() {
+            const avatarFileInput = document.getElementById('avatar_file');
+            const avatarPreview = document.getElementById('avatar_preview');
+            const avatarPreviewContainer = document.getElementById('avatar_preview_container');
+
+            if (!avatarFileInput || !avatarPreview || !avatarPreviewContainer) return;
+
+            avatarFileInput.addEventListener('change', function () {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        avatarPreview.src = e.target.result;
+                        avatarPreviewContainer.style.display = 'block';
+                    };
+
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        // Call the function when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initAvatarPreview();
+        });
+
+        // Handle different file formats
+        document.addEventListener('DOMContentLoaded', function () {
+            const modelFileInput = document.getElementById('model_file');
+            const objMtlContainer = document.getElementById('obj_mtl_container');
+            const textureFilesContainer = document.getElementById('texture_files_container');
+
+            if (!modelFileInput) return;
+
+            modelFileInput.addEventListener('change', function () {
+                const fileName = this.value.toLowerCase();
+
+                // Hide additional file inputs by default
+                objMtlContainer.style.display = 'none';
+                textureFilesContainer.style.display = 'none';
+
+                // Show relevant file inputs based on selected file type
+                if (fileName.endsWith('.obj')) {
+                    objMtlContainer.style.display = 'block';
+                    textureFilesContainer.style.display = 'block';
+                } else if (fileName.endsWith('.fbx')) {
+                    textureFilesContainer.style.display = 'block';
+                }
+            });
+
+            // Form submission handler for file conversion
+            const uploadForm = document.getElementById('uploadForm');
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', function (e) {
+                    const modelFile = modelFileInput.files[0];
+                    if (!modelFile) return;
+
+                    const fileName = modelFile.name.toLowerCase();
+
+                    // If not GLB/GLTF, show conversion progress
+                    if (!fileName.endsWith('.glb') && !fileName.endsWith('.gltf')) {
+                        e.preventDefault();
+
+                        // Show conversion modal
+                        const conversionModal = new bootstrap.Modal(document.getElementById('conversionModal'));
+                        conversionModal.show();
+
+                        // Create FormData
+                        const formData = new FormData(uploadForm);
+
+                        // Send to server for conversion
+                        fetch('/models/convert', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Update form with converted file path and submit
+                                    const convertedFileInput = document.createElement('input');
+                                    convertedFileInput.type = 'hidden';
+                                    convertedFileInput.name = 'converted_file_path';
+                                    convertedFileInput.value = data.convertedFilePath;
+                                    uploadForm.appendChild(convertedFileInput);
+
+                                    // Submit the form
+                                    uploadForm.submit();
+                                } else {
+                                    // Show error
+                                    alert('Error converting file: ' + data.error);
+                                    conversionModal.hide();
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error converting file');
+                                conversionModal.hide();
+                            });
+                    }
+                });
+            }
+        });
+    </script>
+
+    <%- include('../partials/footer') %>
+
+        <!-- Avatar Styles -->
+        <style>
+            .avatar-container {
+                position: relative;
+                width: 120px;
+                height: 120px;
+                margin: 0 auto;
+            }
+
+            .avatar-img {
+                width: 120px;
+                height: 120px;
+                object-fit: cover;
+                border: 3px solid var(--primary-light);
+            }
+
+            .avatar-placeholder {
+                width: 120px;
+                height: 120px;
+                background-color: var(--neutral-200);
+                color: var(--neutral-500);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid var(--neutral-300);
+            }
+
+            .avatar-edit-btn {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+            }
+
+            .avatar-preview {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                overflow: hidden;
+                border: 3px solid var(--primary-light);
+            }
+
+            .avatar-preview img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        </style>

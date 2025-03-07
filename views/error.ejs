@@ -1,0 +1,29 @@
+<%- include('partials/header') %>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <div class="mt-5 mb-4">
+                    <i class="fas fa-exclamation-triangle fa-5x text-warning"></i>
+                </div>
+                <h1 class="display-4 mb-4">Oops! Something went wrong</h1>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h4 class="text-danger mb-3">
+                            <%= message %>
+                        </h4>
+                        <% if (locals.error && Object.keys(error).length> 0) { %>
+                            <div class="alert alert-danger text-start">
+                                <pre class="mb-0"><%= JSON.stringify(error, null, 2) %></pre>
+                            </div>
+                            <% } %>
+                    </div>
+                </div>
+                <a href="/" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <%- include('partials/footer') %>
