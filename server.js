@@ -237,7 +237,7 @@ app.use((req, res, next) => {
         // Extract the Cloudinary URL
         const cloudinaryUrl = originalUrl.substring(originalUrl.indexOf('https://'));
 
-        // Redirect to the correct Cloudinary URL
+        // Redirect to the correct Cloudinary URL with status code 302
         return res.redirect(302, cloudinaryUrl);
     }
 
