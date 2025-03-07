@@ -101,59 +101,45 @@ router.get('/upload', isAuthenticated, (req, res) => {
     });
 });
 
-// Process model upload
-router.post('/upload', isAuthenticated, upload.single('model'), async (req, res) => {
-    if (!req.file) {
-        return res.render('models/upload', {
-            title: 'Upload Model',
-            user: req.session.user,
-            error: 'Please select a model file to upload'
-        });
-    }
-
+// Handle file upload
+router.post('/', isAuthenticated, upload.single('model_file'), async (req, res) => {
     try {
-        const { name, description, isPublic } = req.body;
+        // Get form data
+        const { name, description, is_public } = req.body;
 
-        let filePath, fileSize, fileType;
-
-        if (isProduction) {
-            // In production, we're using Cloudinary
-            filePath = req.file.path || req.file.secure_url;
-            fileSize = req.file.size;
-            fileType = path.extname(req.file.originalname).substring(1);
-
-            console.log('File uploaded to Cloudinary:', filePath);
-        } else {
-            // In development, we're using local storage
-            filePath = path.join(uploadDir, req.file.filename);
-            fileSize = req.file.size;
-            fileType = path.extname(req.file.originalname).substring(1);
+        // Check if file was uploaded
+        if (!req.file) {
+            return res.status(400).render('error', {
+                title: 'Error',
+                message: 'No file uploaded',
+                error: {}
+            });
         }
 
-        // Create new model in database
-        const newModel = await Model.create({
+        console.log('File uploaded to Cloudinary:', req.file.path);
+
+        // Create new model
+        const newModel = new Model({
             name,
             description,
-            file_path: filePath,
-            file_size: fileSize,
-            file_type: fileType,
             user_id: req.session.user._id,
-            is_public: isPublic ? true : false
+            is_public: is_public === 'on',
+            file_path: req.file.path, // Use the full path from Cloudinary
+            file_type: path.extname(req.file.originalname).substring(1),
+            file_size: req.file.size
         });
 
+        // Save model to database
+        await newModel.save();
+
+        // Redirect to model page
         res.redirect(`/models/${newModel._id}`);
     } catch (error) {
-        console.error('Error saving model to database:', error);
-
-    // Delete the uploaded file if database insert fails
-        if (!isProduction && fs.existsSync(req.file.path)) {
-            fs.unlink(req.file.path, () => { });
-        }
-
-        return res.render('models/upload', {
-            title: 'Upload Model',
-            user: req.session.user,
-            error: 'Error saving model to database'
+        console.error('Error creating model:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Error creating model',
+            error: process.env.NODE_ENV === 'development' ? error : {}
         });
     }
 });
