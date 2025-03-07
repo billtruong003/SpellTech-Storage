@@ -587,7 +587,7 @@ router.get('/:id/embed', async (req, res) => {
         // Use MongoDB instead of SQLite
         const model = await Model.findOne({
             _id: modelId,
-            is_public: true
+            is_public: true 
         }).populate('user_id').lean();
 
         if (!model) {
@@ -596,9 +596,10 @@ router.get('/:id/embed', async (req, res) => {
 
         const settings = await ModelSetting.findOne({ model_id: modelId }).lean() || {};
 
-        // Generate embed code
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const modelUrl = `${baseUrl}/${model.file_path}`;
+        // Use direct Cloudinary URL if available
+        const modelUrl = model.file_path.startsWith('https://')
+            ? model.file_path
+            : `${req.protocol}://${req.get('host')}/${model.file_path}`;
 
         // Create embed code with model-viewer
         const embedCode = `<model-viewer src="${modelUrl}" 

@@ -5,11 +5,27 @@ const MongoStore = require('connect-mongo');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const cors = require('cors');
 const { connectDB } = require('./db-mongo');
 const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configure CORS
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Add CORS headers for Cloudinary resources
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    next();
+});
 
 // Ensure upload directory exists
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
