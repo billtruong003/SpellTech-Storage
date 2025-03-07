@@ -197,7 +197,8 @@ router.get('/:id', async (req, res) => {
             ...model,
             id: model._id,
             owner: model.user_id.username,
-            owner_id: model.user_id._id
+            owner_id: model.user_id._id,
+            file_path: model.file_path.startsWith('https://') ? model.file_path : `/${model.file_path}`
         };
 
         res.render('models/view', {
@@ -593,57 +594,49 @@ router.post('/:id/delete', isAuthenticated, async (req, res) => {
 });
 
 // Generate embed code
-router.get('/:id/embed', (req, res) => {
-    const modelId = req.params.id;
+router.get('/:id/embed', async (req, res) => {
+    try {
+        const modelId = req.params.id;
 
-    db.get(`
-    SELECT m.*, ms.*
-    FROM models m
-    LEFT JOIN model_settings ms ON m.id = ms.model_id
-    WHERE m.id = ? AND m.is_public = 1
-  `, [modelId], (err, model) => {
-        if (err || !model) {
-            console.error('Error fetching model for embed:', err);
+        // Use MongoDB instead of SQLite
+        const model = await Model.findOne({
+            _id: modelId,
+            is_public: true
+        }).populate('user_id').lean();
+
+        if (!model) {
             return res.status(404).json({ error: 'Model not found or not public' });
         }
+
+        const settings = await ModelSetting.findOne({ model_id: modelId }).lean() || {};
 
         // Generate embed code
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const modelUrl = `${baseUrl}/${model.file_path}`;
 
-        let embedCode = `<model-viewer src="${modelUrl}" `;
+        // Create embed code with model-viewer
+        const embedCode = `<model-viewer src="${modelUrl}" 
+            alt="${model.name}" 
+            camera-controls 
+            ${settings.autoplay ? 'autoplay' : ''} 
+            ${settings.animation_name ? `animation-name="${settings.animation_name}"` : ''} 
+            camera-orbit="${settings.camera_orbit || '0deg 75deg 2m'}" 
+            camera-target="${settings.camera_target || '0m 0m 0m'}" 
+            field-of-view="${settings.field_of_view || '45deg'}" 
+            exposure="${settings.exposure || '1'}" 
+            shadow-intensity="${settings.shadow_intensity || '0.7'}" 
+            shadow-softness="${settings.shadow_softness || '1'}" 
+            ${settings.environment_image ? `environment-image="${settings.environment_image}"` : ''} 
+            ${settings.skybox_image ? `skybox-image="${settings.skybox_image}"` : ''} 
+            style="width: 100%; height: 400px;">
+        </model-viewer>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>`;
 
-        // Add camera settings
-        if (model.camera_orbit) embedCode += `camera-orbit="${model.camera_orbit}" `;
-        if (model.camera_target) embedCode += `camera-target="${model.camera_target}" `;
-        if (model.field_of_view) embedCode += `field-of-view="${model.field_of_view}" `;
-
-        // Add lighting settings
-        if (model.exposure) embedCode += `exposure="${model.exposure}" `;
-        if (model.shadow_intensity) embedCode += `shadow-intensity="${model.shadow_intensity}" `;
-        if (model.shadow_softness) embedCode += `shadow-softness="${model.shadow_softness}" `;
-
-        // Add environment and skybox
-        if (model.environment_image) embedCode += `environment-image="${model.environment_image}" `;
-        if (model.skybox_image) embedCode += `skybox-image="${model.skybox_image}" `;
-
-        // Add animation settings
-        if (model.animation_name) embedCode += `animation-name="${model.animation_name}" `;
-        if (model.autoplay) embedCode += `autoplay `;
-
-        // Add standard attributes
-        embedCode += `camera-controls ar ar-modes="webxr scene-viewer quick-look" `;
-        embedCode += `alt="${model.name}" `;
-        embedCode += `style="width: 100%; height: 400px;"`;
-
-        // Close tag
-        embedCode += `></model-viewer>`;
-
-        // Add script tag for model-viewer
-        embedCode += `\n<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>`;
-
-        res.json({ embedCode });
-    });
+        res.json({ success: true, embedCode });
+    } catch (error) {
+        console.error('Error generating embed code:', error);
+        res.status(500).json({ error: 'Error generating embed code' });
+    }
 });
 
 module.exports = router; 
