@@ -37,7 +37,8 @@
                     <div class="col">
                         <div class="card h-100 shadow-sm">
                             <div class="card-model-viewer" style="height: 200px; background-color: #f8f9fa;">
-                                <model-viewer src="/<%= model.file_path %>" camera-controls auto-rotate disable-zoom
+                                <model-viewer src="<%= model.file_path.startsWith('https://') ? model.file_path : `/${model.file_path}` %>"
+                                    camera-controls auto-rotate disable-zoom
                                     shadow-intensity="1" exposure="0.5" style="width: 100%; height: 100%;"
                                     loading="lazy" ar-status="not-presenting">
                                 </model-viewer>
