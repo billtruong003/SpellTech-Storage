@@ -205,7 +205,8 @@ router.get('/:id', async (req, res) => {
             model: formattedModel,
             settings: settings,
             hotspots: hotspots,
-            user: req.session.user || null
+            user: req.session.user || null,
+            isOwner: req.session.user && req.session.user._id.toString() === model.user_id._id.toString()
         });
     } catch (error) {
         console.error('Error fetching model:', error);
