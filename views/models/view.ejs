@@ -17,7 +17,9 @@
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-model-viewer" style="height: 500px; background-color: #f8f9fa;">
-                        <model-viewer id="modelViewer" src="/<%= model.file_path %>" alt="<%= model.name %>"
+                        <model-viewer id="modelViewer"
+                            src="<%= model.file_path.startsWith('https://') ? model.file_path : `/${model.file_path}` %>"
+                            alt="<%= model.name %>"
                             camera-controls <%=model.autoplay ? 'autoplay' : '' %>
                             <%= model.animation_name ? `animation-name="${model.animation_name}" ` : '' %>
                                 camera-orbit="<%= model.camera_orbit || '0deg 75deg 2m' %>"
@@ -26,50 +28,38 @@
                                             exposure="<%= model.exposure || '1' %>"
                                                 shadow-intensity="<%= model.shadow_intensity || '0.7' %>"
                                                     shadow-softness="<%= model.shadow_softness || '1' %>"
-                                                        <%= model.environment_image ?
-                                                            `environment-image="${model.environment_image}" ` : '' %>
-                                                            <%= model.skybox_image ?
-                                                                `skybox-image="${model.skybox_image}" ` : '' %>
-                                                                ar ar-modes="webxr scene-viewer quick-look"
-                                                                style="width: 100%; height: 100%;">
+                            <%= model.environment_image ? `environment-image="${model.environment_image}" ` : '' %>
+                                <%= model.skybox_image ? `skybox-image="${model.skybox_image}" ` : '' %>
+                                    ar ar-modes="webxr scene-viewer quick-look"
+                                    style="width: 100%; height: 100%;">
 
-                                                                <!-- Hotspots -->
-                                                                <% if (hotspots && hotspots.length> 0) { %>
-                                                                    <% hotspots.forEach(hotspot=> { %>
-                                                                        <button slot="hotspot-<%= hotspot.id %>"
-                                                                            class="hotspot"
-                                                                            data-position="<%= hotspot.position %>"
-                                                                            <%=hotspot.normal ?
-                                                                            `data-normal="${hotspot.normal}" ` : '' %>
-                                                                            <%= hotspot.surface ?
-                                                                                `data-surface="${hotspot.surface}" `
-                                                                                : '' %>
-                                                                                data-visibility-attribute="visible"
-                                                                                >
-                                                                                <div class="hotspot-annotation">
-                                                                                    <%= hotspot.content %>
-                                                                                </div>
-                                                                        </button>
-                                                                        <% }); %>
-                                                                            <% } %>
+                            <!-- Hotspots -->
+                            <% if (hotspots && hotspots.length> 0) { %>
+                                <% hotspots.forEach(hotspot=> { %>
+                                    <button slot="hotspot-<%= hotspot.id %>" class="hotspot" data-position="<%= hotspot.position %>"
+                                        <%= hotspot.normal ? `data-normal="${hotspot.normal}" ` : '' %>
+                                            <%= hotspot.surface ? `data-surface="${hotspot.surface}" ` : '' %>
+                                                data-visibility-attribute="visible">
+                                                <div class="hotspot-annotation">
+                                                    <%= hotspot.content %>
+                                                </div>
+                                                </button>
+                                                <% }); %>
+                                                    <% } %>
 
-                                                                                <!-- AR Button -->
-                                                                                <button slot="ar-button"
-                                                                                    class="ar-button">
-                                                                                    <i class="fas fa-cube me-1"></i>
-                                                                                    View in AR
-                                                                                </button>
+                            <!-- AR Button -->
+                            <button slot="ar-button" class="ar-button">
+                                <i class="fas fa-cube me-1"></i>
+                                View in AR
+                            </button>
 
-                                                                                <!-- Loading Poster -->
-                                                                                <div slot="poster" class="poster">
-                                                                                    <div class="spinner-border text-primary"
-                                                                                        role="status">
-                                                                                        <span
-                                                                                            class="visually-hidden">Loading...</span>
-                                                                                    </div>
-                                                                                    <div class="mt-2">Loading 3D
-                                                                                        Model...</div>
-                                                                                </div>
+                            <!-- Loading Poster -->
+                            <div slot="poster" class="poster">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="mt-2">Loading 3D Model...</div>
+                                </div>
                         </model-viewer>
                     </div>
                 </div>
