@@ -9,17 +9,7 @@ const connectDB = async () => {
         // Set TLS options for Node.js
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 
-        // Set minimum TLS version to 1.2
-        const tlsOptions = {
-            tls: true,
-            tlsInsecure: false,
-            tlsAllowInvalidCertificates: false,
-            tlsAllowInvalidHostnames: false,
-            minVersion: 'TLSv1.2',
-            maxVersion: 'TLSv1.3'
-        };
-
-        // Connect with enhanced options
+        // Connect with simplified options
         const conn = await mongoose.connect(process.env.MONGODB_URI, {
             serverApi: {
                 version: ServerApiVersion.v1,
@@ -27,8 +17,7 @@ const connectDB = async () => {
                 deprecationErrors: true,
             },
             connectTimeoutMS: 30000,
-            socketTimeoutMS: 45000,
-            ...tlsOptions
+            socketTimeoutMS: 45000
         });
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);
@@ -102,11 +91,7 @@ const testConnection = async () => {
                 deprecationErrors: true,
             },
             connectTimeoutMS: 30000,
-            socketTimeoutMS: 45000,
-            tls: true,
-            tlsInsecure: false,
-            minVersion: 'TLSv1.2',
-            maxVersion: 'TLSv1.3'
+            socketTimeoutMS: 45000
         });
 
         await client.connect();

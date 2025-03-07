@@ -134,7 +134,7 @@ app.use(async (req, res, next) => {
     if (mongoose.connection.readyState !== 1) {
         // If not connected and we've been trying for more than 10 seconds
         if (Date.now() - global.mongoConnectStartTime > 10000) {
-            console.log('MongoDB connection unavailable, falling back to SQLite');
+            console.log('MongoDB connection unavailable, using SQLite fallback');
 
             // Only initialize SQLite once
             if (!global.sqliteInitialized) {
@@ -147,11 +147,66 @@ app.use(async (req, res, next) => {
                     global.sqliteDb = db;
                     global.sqliteInitialized = true;
 
+                    // Create tables if they don't exist
+                    db.serialize(() => {
+                        // Users table
+                        db.run(`CREATE TABLE IF NOT EXISTS users (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            username TEXT UNIQUE,
+                            email TEXT UNIQUE,
+                            password TEXT,
+                            role TEXT DEFAULT 'user',
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        )`);
+
+                        // Models table
+                        db.run(`CREATE TABLE IF NOT EXISTS models (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            title TEXT,
+                            description TEXT,
+                            filename TEXT,
+                            filepath TEXT,
+                            user_id INTEGER,
+                            is_public INTEGER DEFAULT 1,
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (user_id) REFERENCES users (id)
+                        )`);
+
+                        // Check if admin user exists
+                        db.get("SELECT * FROM users WHERE username = 'admin'", (err, row) => {
+                            if (err) {
+                                console.error('Error checking admin user:', err);
+                                return;
+                            }
+
+                            // Create admin user if not exists
+                            if (!row) {
+                                const bcrypt = require('bcrypt');
+                                const hashedPassword = bcrypt.hashSync('admin123', 10);
+
+                                db.run(
+                                    "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
+                                    ['admin', 'admin@example.com', hashedPassword, 'admin'],
+                                    function (err) {
+                                        if (err) {
+                                            console.error('Error creating admin user:', err);
+                                        } else {
+                                            console.log('Admin user created in SQLite');
+                                        }
+                                    }
+                                );
+                            }
+                        });
+                    });
+
                     console.log('SQLite fallback initialized successfully');
                 } catch (error) {
                     console.error('Failed to initialize SQLite fallback:', error);
                 }
             }
+
+            // Attach SQLite db to request
+            req.sqliteDb = global.sqliteDb;
         }
     }
     next();
