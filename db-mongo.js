@@ -6,12 +6,29 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 // Connect to MongoDB
 const connectDB = async () => {
     try {
+        // Set TLS options for Node.js
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
+
+        // Set minimum TLS version to 1.2
+        const tlsOptions = {
+            tls: true,
+            tlsInsecure: false,
+            tlsAllowInvalidCertificates: false,
+            tlsAllowInvalidHostnames: false,
+            minVersion: 'TLSv1.2',
+            maxVersion: 'TLSv1.3'
+        };
+
+        // Connect with enhanced options
         const conn = await mongoose.connect(process.env.MONGODB_URI, {
             serverApi: {
                 version: ServerApiVersion.v1,
                 strict: true,
                 deprecationErrors: true,
-            }
+            },
+            connectTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+            ...tlsOptions
         });
 
         console.log(`MongoDB Connected: ${conn.connection.host}`);
@@ -32,10 +49,7 @@ const connectDB = async () => {
                 const mongod = await MongoMemoryServer.create();
                 const uri = mongod.getUri();
 
-                const conn = await mongoose.connect(uri, {
-                    useNewUrlParser: true,
-                    useUnifiedTopology: true
-                });
+                const conn = await mongoose.connect(uri);
 
                 console.log('Connected to in-memory MongoDB');
 
@@ -77,4 +91,33 @@ const initDb = async () => {
     }
 };
 
-module.exports = { connectDB }; 
+// Test MongoDB connection
+const testConnection = async () => {
+    try {
+        // Try direct connection with MongoClient
+        const client = new MongoClient(process.env.MONGODB_URI, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                strict: true,
+                deprecationErrors: true,
+            },
+            connectTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+            tls: true,
+            tlsInsecure: false,
+            minVersion: 'TLSv1.2',
+            maxVersion: 'TLSv1.3'
+        });
+
+        await client.connect();
+        await client.db("admin").command({ ping: 1 });
+        console.log("MongoDB connection test successful!");
+        await client.close();
+        return true;
+    } catch (error) {
+        console.error("MongoDB connection test failed:", error);
+        return false;
+    }
+};
+
+module.exports = { connectDB, testConnection }; 

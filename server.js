@@ -46,9 +46,16 @@ const upload = multer({
     }
 });
 
+// Set MongoDB connection start time
+global.mongoConnectStartTime = Date.now();
+
 // Connect to MongoDB
 connectDB().then(() => {
     console.log('MongoDB connected successfully');
+    // Start the server
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
 }).catch(err => {
     console.error('Failed to connect to MongoDB:', err);
 });
@@ -85,12 +92,27 @@ app.use('/models', require('./routes/models'));
 // Add a debug route for MongoDB connection
 app.get('/db-test', async (req, res) => {
     try {
-        // Try to ping MongoDB
-        const result = await mongoose.connection.db.admin().ping();
+        // Import testConnection function
+        const { testConnection } = require('./db-mongo');
+
+        // Test direct connection
+        const directConnectionResult = await testConnection();
+
+        // Try to ping MongoDB through mongoose
+        let mongooseResult = null;
+        if (mongoose.connection.readyState === 1) {
+            mongooseResult = await mongoose.connection.db.admin().ping();
+        }
+
         res.json({
-            status: 'success',
-            message: 'Connected to MongoDB',
-            result: result
+            status: directConnectionResult ? 'success' : 'error',
+            message: directConnectionResult ? 'Connected to MongoDB' : 'Failed to connect to MongoDB',
+            directConnection: directConnectionResult,
+            mongooseConnection: {
+                readyState: mongoose.connection.readyState,
+                result: mongooseResult
+            },
+            mongodbUri: process.env.MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@') // Hide credentials
         });
     } catch (error) {
         res.status(500).json({
@@ -104,6 +126,35 @@ app.get('/db-test', async (req, res) => {
 // Add a health check endpoint for Render
 app.get('/healthz', (req, res) => {
     res.status(200).send('OK');
+});
+
+// Add fallback to SQLite if MongoDB connection fails
+app.use(async (req, res, next) => {
+    // Check if MongoDB is connected
+    if (mongoose.connection.readyState !== 1) {
+        // If not connected and we've been trying for more than 10 seconds
+        if (Date.now() - global.mongoConnectStartTime > 10000) {
+            console.log('MongoDB connection unavailable, falling back to SQLite');
+
+            // Only initialize SQLite once
+            if (!global.sqliteInitialized) {
+                try {
+                    // Initialize SQLite
+                    const sqlite3 = require('sqlite3').verbose();
+                    const db = new sqlite3.Database(process.env.DB_PATH || 'database.sqlite');
+
+                    // Make db available globally
+                    global.sqliteDb = db;
+                    global.sqliteInitialized = true;
+
+                    console.log('SQLite fallback initialized successfully');
+                } catch (error) {
+                    console.error('Failed to initialize SQLite fallback:', error);
+                }
+            }
+        }
+    }
+    next();
 });
 
 // Error handling middleware
@@ -123,9 +174,4 @@ app.use((req, res) => {
         message: 'The page you are looking for does not exist.',
         error: {}
     });
-});
-
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
 }); 
