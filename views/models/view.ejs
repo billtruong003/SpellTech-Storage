@@ -18,20 +18,20 @@
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-model-viewer" style="height: 500px; background-color: #f8f9fa;">
                         <model-viewer id="modelViewer"
-                            src="<%= model.file_path.startsWith('https://') ? model.file_path : `/${model.file_path}` %>"
+                            src="<%= model.file_path %>"
                             alt="<%= model.name %>"
                             camera-controls <%=model.autoplay ? 'autoplay' : '' %>
                             <%= model.animation_name ? `animation-name="${model.animation_name}" ` : '' %>
-                                camera-orbit="<%= model.camera_orbit || '0deg 75deg 2m' %>"
-                                    camera-target="<%= model.camera_target || '0m 0m 0m' %>"
-                                        field-of-view="<%= model.field_of_view || '45deg' %>"
-                                            exposure="<%= model.exposure || '1' %>"
-                                                shadow-intensity="<%= model.shadow_intensity || '0.7' %>"
-                                                    shadow-softness="<%= model.shadow_softness || '1' %>"
+                            camera-orbit="<%= model.camera_orbit || '0deg 75deg 2m' %>"
+                                camera-target="<%= model.camera_target || '0m 0m 0m' %>"
+                                    field-of-view="<%= model.field_of_view || '45deg' %>"
+                                        exposure="<%= model.exposure || '1' %>"
+                                            shadow-intensity="<%= model.shadow_intensity || '0.7' %>"
+                                                shadow-softness="<%= model.shadow_softness || '1' %>"
                             <%= model.environment_image ? `environment-image="${model.environment_image}" ` : '' %>
-                                <%= model.skybox_image ? `skybox-image="${model.skybox_image}" ` : '' %>
-                                    ar ar-modes="webxr scene-viewer quick-look"
-                                    style="width: 100%; height: 100%;">
+                            <%= model.skybox_image ? `skybox-image="${model.skybox_image}" ` : '' %>
+                                ar ar-modes="webxr scene-viewer quick-look"
+                                style="width: 100%; height: 100%;">
 
                             <!-- Hotspots -->
                             <% if (hotspots && hotspots.length> 0) { %>
