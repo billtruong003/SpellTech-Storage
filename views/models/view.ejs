@@ -18,7 +18,7 @@
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-model-viewer" style="height: 500px; background-color: #f8f9fa;">
                         <model-viewer id="modelViewer"
-                            src="<%= model.file_path %>"
+                            src="<%= model.file_path.startsWith('https://') ? model.file_path : `/${model.file_path}` %>"
                             alt="<%= model.name %>"
                             camera-controls <%=model.autoplay ? 'autoplay' : '' %>
                             <%= model.animation_name ? `animation-name="${model.animation_name}" ` : '' %>
