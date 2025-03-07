@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const { db } = require('../db');
+const { User } = require('../models');
 const { isAuthenticated } = require('../middleware/auth');
 
 // Login page
@@ -17,40 +17,38 @@ router.get('/login', (req, res) => {
 });
 
 // Login process
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
         return res.redirect('/auth/login?error=Please provide username and password');
     }
 
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
-        if (err) {
-            console.error('Database error during login:', err);
-            return res.redirect('/auth/login?error=An error occurred');
-        }
+    try {
+        // Find user by username
+        const user = await User.findOne({ username });
 
         if (!user) {
             return res.redirect('/auth/login?error=Invalid username or password');
         }
 
-        bcrypt.compare(password, user.password, (err, result) => {
-            if (err) {
-                console.error('Error comparing passwords:', err);
-                return res.redirect('/auth/login?error=An error occurred');
-            }
+        // Compare password
+        const isMatch = await user.comparePassword(password);
 
-            if (!result) {
-                return res.redirect('/auth/login?error=Invalid username or password');
-            }
+        if (!isMatch) {
+            return res.redirect('/auth/login?error=Invalid username or password');
+        }
 
-            // Store user in session (excluding password)
-            const { password, ...userWithoutPassword } = user;
-            req.session.user = userWithoutPassword;
+        // Store user in session (excluding password)
+        const userObject = user.toObject();
+        delete userObject.password;
+        req.session.user = userObject;
 
-            res.redirect('/dashboard');
-        });
-    });
+        res.redirect('/dashboard');
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.redirect('/auth/login?error=An error occurred');
+    }
 });
 
 // Register page
@@ -65,7 +63,7 @@ router.get('/register', (req, res) => {
 });
 
 // Register process
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     const { username, email, password, confirmPassword } = req.body;
 
     // Basic validation
@@ -77,50 +75,33 @@ router.post('/register', (req, res) => {
         return res.redirect('/auth/register?error=Passwords do not match');
     }
 
-    // Check if username or email already exists
-    db.get('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], (err, existingUser) => {
-        if (err) {
-            console.error('Database error during registration:', err);
-            return res.redirect('/auth/register?error=An error occurred');
-        }
+    try {
+        // Check if username or email already exists
+        const existingUser = await User.findOne({
+            $or: [{ username }, { email }]
+        });
 
         if (existingUser) {
             return res.redirect('/auth/register?error=Username or email already in use');
         }
 
-        // Hash password and create user
-        bcrypt.hash(password, 10, (err, hash) => {
-            if (err) {
-                console.error('Error hashing password:', err);
-                return res.redirect('/auth/register?error=An error occurred');
-            }
-
-            db.run(
-                'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-                [username, email, hash],
-                function (err) {
-                    if (err) {
-                        console.error('Error creating user:', err);
-                        return res.redirect('/auth/register?error=Failed to create user');
-                    }
-
-                    // Log in the new user
-                    db.get('SELECT * FROM users WHERE id = ?', [this.lastID], (err, user) => {
-                        if (err || !user) {
-                            console.error('Error fetching new user:', err);
-                            return res.redirect('/auth/login?message=Registration successful. Please log in.');
-                        }
-
-                        // Store user in session (excluding password)
-                        const { password, ...userWithoutPassword } = user;
-                        req.session.user = userWithoutPassword;
-
-                        res.redirect('/dashboard');
-                    });
-                }
-            );
+        // Create new user
+        const newUser = await User.create({
+            username,
+            email,
+            password
         });
-    });
+
+        // Store user in session (excluding password)
+        const userObject = newUser.toObject();
+        delete userObject.password;
+        req.session.user = userObject;
+
+        res.redirect('/dashboard');
+    } catch (error) {
+        console.error('Error during registration:', error);
+        res.redirect('/auth/register?error=An error occurred');
+    }
 });
 
 // Logout
@@ -142,93 +123,67 @@ router.get('/profile', isAuthenticated, (req, res) => {
 });
 
 // Update profile
-router.post('/profile', isAuthenticated, (req, res) => {
+router.post('/profile', isAuthenticated, async (req, res) => {
     const { email, currentPassword, newPassword, confirmPassword } = req.body;
-    const userId = req.session.user.id;
+    const userId = req.session.user._id;
 
-    // If updating password
-    if (currentPassword && newPassword) {
-        if (newPassword !== confirmPassword) {
+    try {
+        // Get user from database
+        const user = await User.findById(userId);
+
+        if (!user) {
             return res.render('profile', {
                 title: 'My Profile',
                 user: req.session.user,
-                error: 'New passwords do not match'
+                error: 'User not found'
             });
         }
 
-        // Verify current password
-        db.get('SELECT password FROM users WHERE id = ?', [userId], (err, user) => {
-            if (err || !user) {
-                console.error('Error fetching user for password update:', err);
+        // If updating password
+        if (currentPassword && newPassword) {
+            if (newPassword !== confirmPassword) {
                 return res.render('profile', {
                     title: 'My Profile',
                     user: req.session.user,
-                    error: 'Failed to update profile'
+                    error: 'New passwords do not match'
                 });
             }
 
-            bcrypt.compare(currentPassword, user.password, (err, result) => {
-                if (err || !result) {
-                    return res.render('profile', {
-                        title: 'My Profile',
-                        user: req.session.user,
-                        error: 'Current password is incorrect'
-                    });
-                }
+            // Verify current password
+            const isMatch = await user.comparePassword(currentPassword);
 
-                // Hash and update new password
-                bcrypt.hash(newPassword, 10, (err, hash) => {
-                    if (err) {
-                        console.error('Error hashing new password:', err);
-                        return res.render('profile', {
-                            title: 'My Profile',
-                            user: req.session.user,
-                            error: 'Failed to update password'
-                        });
-                    }
-
-                    db.run('UPDATE users SET email = ?, password = ? WHERE id = ?', [email, hash, userId], function (err) {
-                        if (err) {
-                            console.error('Error updating profile with new password:', err);
-                            return res.render('profile', {
-                                title: 'My Profile',
-                                user: req.session.user,
-                                error: 'Failed to update profile'
-                            });
-                        }
-
-                        // Update session
-                        req.session.user.email = email;
-
-                        res.render('profile', {
-                            title: 'My Profile',
-                            user: req.session.user,
-                            success: 'Profile updated successfully'
-                        });
-                    });
+            if (!isMatch) {
+                return res.render('profile', {
+                    title: 'My Profile',
+                    user: req.session.user,
+                    error: 'Current password is incorrect'
                 });
-            });
+            }
+
+            // Update user
+            user.email = email;
+            user.password = newPassword;
+            await user.save();
+        } else {
+            // Just update email
+            user.email = email;
+            await user.save();
+        }
+
+        // Update session
+        req.session.user.email = email;
+
+        res.render('profile', {
+            title: 'My Profile',
+            user: req.session.user,
+            success: 'Profile updated successfully'
         });
-    } else {
-        // Just update email
-        db.run('UPDATE users SET email = ? WHERE id = ?', [email, userId], function (err) {
-            if (err) {
-                console.error('Error updating email:', err);
-                return res.render('profile', {
-                    title: 'My Profile',
-                    user: req.session.user,
-                    error: 'Failed to update profile'
-                });
-            }
-
-            // Update session
-            req.session.user.email = email;
-
-            res.render('profile', {
-                title: 'My Profile',
-                user: req.session.user,
-                success: 'Profile updated successfully'
-            });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.render('profile', {
+            title: 'My Profile',
+            user: req.session.user,
+            error: 'Failed to update profile'
         });
     }
 });

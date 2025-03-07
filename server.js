@@ -1,11 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const MongoStore = require('connect-mongo');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { initDb } = require('./db');
+const { connectDB } = require('./db-mongo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,8 +45,12 @@ const upload = multer({
     }
 });
 
-// Initialize database
-initDb();
+// Connect to MongoDB
+connectDB().then(() => {
+    console.log('MongoDB connected successfully');
+}).catch(err => {
+    console.error('Failed to connect to MongoDB:', err);
+});
 
 // Middleware
 app.use(express.json());
@@ -54,11 +58,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(`/${uploadDir}`, express.static(uploadDir));
 
-// Session configuration
+// Session configuration with MongoDB
 app.use(session({
-    store: new SQLiteStore({
-        db: process.env.DB_PATH,
-        table: 'sessions'
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/3d-model-manager',
+        ttl: 60 * 60 * 24 // 1 day
     }),
     secret: process.env.SESSION_SECRET || 'your_session_secret',
     resave: false,

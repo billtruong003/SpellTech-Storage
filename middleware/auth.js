@@ -7,7 +7,7 @@ function isAuthenticated(req, res, next) {
     }
 
     // If AJAX request
-    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -24,12 +24,16 @@ function isAdmin(req, res, next) {
     }
 
     // If AJAX request
-    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
         return res.status(403).json({ error: 'Forbidden' });
     }
 
     // Redirect to home page
-    res.status(403).render('error', { message: 'You do not have permission to access this page' });
+    res.status(403).render('error', {
+        title: 'Access Denied',
+        message: 'You do not have permission to access this page',
+        error: {}
+    });
 }
 
 module.exports = {
