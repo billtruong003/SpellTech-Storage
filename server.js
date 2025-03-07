@@ -238,7 +238,7 @@ app.use((req, res, next) => {
         const cloudinaryUrl = originalUrl.substring(originalUrl.indexOf('https://'));
 
         // Redirect to the correct Cloudinary URL
-        return res.redirect(cloudinaryUrl);
+        return res.redirect(302, cloudinaryUrl);
     }
 
     next();

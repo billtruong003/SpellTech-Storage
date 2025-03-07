@@ -324,44 +324,10 @@ router.post('/:id/edit', isAuthenticated, async (req, res) => {
 });
 
 // Update model settings
-router.post('/:id/settings', isAuthenticated, (req, res) => {
-    const modelId = req.params.id;
-    const {
-        camera_orbit,
-        camera_target,
-        field_of_view,
-        exposure,
-        shadow_intensity,
-        shadow_softness,
-        environment_image,
-        skybox_image,
-        animation_name,
-        autoplay
-    } = req.body;
-
-    // First check if user owns this model
-    db.get('SELECT * FROM models WHERE id = ? AND user_id = ?', [modelId, req.session.user.id], (err, model) => {
-        if (err || !model) {
-            console.error('Error checking model ownership:', err);
-            return res.status(403).json({ error: 'You do not have permission to edit this model' });
-        }
-
-        // Update model settings
-        db.run(`
-      UPDATE model_settings
-      SET camera_orbit = ?,
-          camera_target = ?,
-          field_of_view = ?,
-          exposure = ?,
-          shadow_intensity = ?,
-          shadow_softness = ?,
-          environment_image = ?,
-          skybox_image = ?,
-          animation_name = ?,
-          autoplay = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE model_id = ?
-    `, [
+router.post('/:id/settings', isAuthenticated, async (req, res) => {
+    try {
+        const modelId = req.params.id;
+        const {
             camera_orbit,
             camera_target,
             field_of_view,
@@ -371,20 +337,45 @@ router.post('/:id/settings', isAuthenticated, (req, res) => {
             environment_image,
             skybox_image,
             animation_name,
-            autoplay ? 1 : 0,
-            modelId
-        ], function (err) {
-            if (err) {
-                console.error('Error updating model settings:', err);
-                return res.status(500).json({ error: 'Failed to update model settings' });
-            }
+            autoplay
+        } = req.body;
 
-            // Also update the model's updated_at timestamp
-            db.run('UPDATE models SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [modelId]);
-
-            res.json({ success: true });
+        // First check if user owns this model
+        const model = await Model.findOne({
+            _id: modelId,
+            user_id: req.session.user._id
         });
-    });
+
+        if (!model) {
+            return res.status(403).json({ error: 'You do not have permission to edit this model' });
+        }
+
+        // Find or create model settings
+        let settings = await ModelSetting.findOne({ model_id: modelId });
+
+        if (!settings) {
+            settings = new ModelSetting({ model_id: modelId });
+        }
+
+        // Update settings
+        settings.camera_orbit = camera_orbit;
+        settings.camera_target = camera_target;
+        settings.field_of_view = field_of_view;
+        settings.exposure = exposure;
+        settings.shadow_intensity = shadow_intensity;
+        settings.shadow_softness = shadow_softness;
+        settings.environment_image = environment_image;
+        settings.skybox_image = skybox_image;
+        settings.animation_name = animation_name;
+        settings.autoplay = autoplay ? true : false;
+
+        await settings.save();
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating model settings:', error);
+        res.status(500).json({ error: 'Failed to update model settings' });
+    }
 });
 
 // Add hotspot
