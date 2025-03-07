@@ -228,6 +228,22 @@ app.use(async (req, res, next) => {
     next();
 });
 
+// Add middleware to handle Cloudinary URLs
+app.use((req, res, next) => {
+    const originalUrl = req.url;
+
+    // Check if the URL is a Cloudinary URL that was incorrectly prefixed with the domain
+    if (originalUrl.includes('https://res.cloudinary.com/')) {
+        // Extract the Cloudinary URL
+        const cloudinaryUrl = originalUrl.substring(originalUrl.indexOf('https://'));
+
+        // Redirect to the correct Cloudinary URL
+        return res.redirect(cloudinaryUrl);
+    }
+
+    next();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);

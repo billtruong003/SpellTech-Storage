@@ -596,27 +596,35 @@ router.get('/:id/embed', async (req, res) => {
 
         const settings = await ModelSetting.findOne({ model_id: modelId }).lean() || {};
 
-        // Use direct Cloudinary URL if available
+        // Use direct Cloudinary URL if available, ensure it's not prefixed with the host
         const modelUrl = model.file_path.startsWith('https://')
             ? model.file_path
             : `${req.protocol}://${req.get('host')}/${model.file_path}`;
 
         // Create embed code with model-viewer
-        const embedCode = `<model-viewer src="${modelUrl}" 
-            alt="${model.name}" 
-            camera-controls 
-            ${settings.autoplay ? 'autoplay' : ''} 
-            ${settings.animation_name ? `animation-name="${settings.animation_name}"` : ''} 
-            camera-orbit="${settings.camera_orbit || '0deg 75deg 2m'}" 
-            camera-target="${settings.camera_target || '0m 0m 0m'}" 
-            field-of-view="${settings.field_of_view || '45deg'}" 
-            exposure="${settings.exposure || '1'}" 
-            shadow-intensity="${settings.shadow_intensity || '0.7'}" 
-            shadow-softness="${settings.shadow_softness || '1'}" 
-            ${settings.environment_image ? `environment-image="${settings.environment_image}"` : ''} 
-            ${settings.skybox_image ? `skybox-image="${settings.skybox_image}"` : ''} 
-            style="width: 100%; height: 400px;">
-        </model-viewer>
+        const embedCode = `<div style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto;">
+            <div style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%;">
+                <model-viewer src="${modelUrl}" 
+                    alt="${model.name}" 
+                    camera-controls 
+                    ${settings.autoplay ? 'autoplay' : ''} 
+                    ${settings.animation_name ? `animation-name="${settings.animation_name}"` : ''} 
+                    camera-orbit="${settings.camera_orbit || '0deg 75deg 2m'}" 
+                    camera-target="${settings.camera_target || '0m 0m 0m'}" 
+                    field-of-view="${settings.field_of_view || '45deg'}" 
+                    exposure="${settings.exposure || '1'}" 
+                    shadow-intensity="${settings.shadow_intensity || '0.7'}" 
+                    shadow-softness="${settings.shadow_softness || '1'}" 
+                    ${settings.environment_image ? `environment-image="${settings.environment_image}"` : ''} 
+                    ${settings.skybox_image ? `skybox-image="${settings.skybox_image}"` : ''} 
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 4px;">
+                </model-viewer>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-size: 14px; color: #666;">${model.name}</span>
+                <a href="${req.protocol}://${req.get('host')}/models/${model._id}" style="font-size: 12px; color: #3498db; text-decoration: none;" target="_blank">View on 3D Model Manager</a>
+            </div>
+        </div>
         <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>`;
 
         res.json({ success: true, embedCode });

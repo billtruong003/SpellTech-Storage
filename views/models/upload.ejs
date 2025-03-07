@@ -192,6 +192,29 @@
         </div>
     </div>
     
+    <!-- Model Preview Modal -->
+    <div class="modal fade" id="modelPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">3D Model Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="modelViewerContainer" style="height: 500px; background-color: #f8f9fa;">
+                        <model-viewer id="previewModelViewer" camera-controls auto-rotate shadow-intensity="1" exposure="1"
+                            style="width: 100%; height: 100%;">
+                        </model-viewer>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <script>
         // Handle different file formats
         document.addEventListener('DOMContentLoaded', function () {
@@ -200,10 +223,13 @@
             const textureFilesContainer = document.getElementById('texture_files_container');
             const uploadForm = document.getElementById('uploadForm');
             const uploadProgress = document.getElementById('uploadProgress');
+            const modelPreviewModal = new bootstrap.Modal(document.getElementById('modelPreviewModal'));
+            const previewModelViewer = document.getElementById('previewModelViewer');
 
             if (modelFileInput) {
                 modelFileInput.addEventListener('change', function () {
                     const fileName = this.value.toLowerCase();
+                    const file = this.files[0];
 
                     // Hide additional file inputs by default
                     objMtlContainer.style.display = 'none';
@@ -218,17 +244,37 @@
                     }
 
                     // Preview model if possible
-                    if (this.files && this.files[0]) {
-                        // In a real implementation, you would use model-viewer or another library
-                        // to preview the 3D model here
+                    if (file) {
                         const modelPreview = document.getElementById('modelPreview');
+
+                        // Show file info
                         modelPreview.innerHTML = `
-                                <div class="text-center p-5 bg-light rounded">
-                                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
-                                    <p class="mb-0">File selected: ${this.files[0].name}</p>
-                                    <p class="text-muted">${Math.round(this.files[0].size / 1024)} KB</p>
-                                </div>
-                            `;
+                            <div class="text-center p-4 bg-light rounded">
+                                <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                                <p class="mb-0">File selected: ${file.name}</p>
+                                <p class="text-muted mb-3">${Math.round(file.size / 1024)} KB</p>
+                                <button type="button" class="btn btn-primary" id="previewBtn">
+                                    <i class="fas fa-eye me-2"></i>Preview Model
+                                </button>
+                            </div>
+                        `;
+
+                        // Add preview button event listener
+                        document.getElementById('previewBtn').addEventListener('click', function () {
+                            // Only GLB and GLTF can be previewed directly
+                            if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
+                                const objectURL = URL.createObjectURL(file);
+                                previewModelViewer.setAttribute('src', objectURL);
+                                modelPreviewModal.show();
+
+                                // Clean up object URL when modal is hidden
+                                document.getElementById('modelPreviewModal').addEventListener('hidden.bs.modal', function () {
+                                    URL.revokeObjectURL(objectURL);
+                                }, { once: true });
+                            } else {
+                                alert('Only GLB and GLTF files can be previewed directly. Other formats will be viewable after upload.');
+                            }
+                        });
                     }
                 });
             }
