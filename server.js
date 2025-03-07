@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const { connectDB } = require('./db-mongo');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -80,6 +81,30 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
 app.use('/models', require('./routes/models'));
+
+// Add a debug route for MongoDB connection
+app.get('/db-test', async (req, res) => {
+    try {
+        // Try to ping MongoDB
+        const result = await mongoose.connection.db.admin().ping();
+        res.json({
+            status: 'success',
+            message: 'Connected to MongoDB',
+            result: result
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to connect to MongoDB',
+            error: error.message
+        });
+    }
+});
+
+// Add a health check endpoint for Render
+app.get('/healthz', (req, res) => {
+    res.status(200).send('OK');
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

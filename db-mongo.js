@@ -7,8 +7,6 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const connectDB = async () => {
     try {
         const conn = await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             serverApi: {
                 version: ServerApiVersion.v1,
                 strict: true,
